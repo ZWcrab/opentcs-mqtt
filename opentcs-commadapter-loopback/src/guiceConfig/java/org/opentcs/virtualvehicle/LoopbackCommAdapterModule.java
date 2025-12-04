@@ -4,6 +4,7 @@ package org.opentcs.virtualvehicle;
 
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import org.opentcs.customizations.kernel.KernelInjectionModule;
+import org.opentcs.demovehicle.MyCommAdapterFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +46,7 @@ public class LoopbackCommAdapterModule
 
     // tag::documentation_createCommAdapterModule[]
     vehicleCommAdaptersBinder().addBinding().to(LoopbackCommunicationAdapterFactory.class);
+    vehicleCommAdaptersBinder().addBinding().to(MyCommAdapterFactory.class);
     // end::documentation_createCommAdapterModule[]
   }
 

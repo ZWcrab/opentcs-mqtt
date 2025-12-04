@@ -4,6 +4,7 @@
 buildscript {
   repositories {
     mavenLocal()
+    maven { url 'https://maven.aliyun.com/repository/public/' } // 使用阿里云 Maven 仓库
     mavenCentral()
   }
 }
@@ -34,6 +35,7 @@ subprojects {
 
 repositories {
   mavenLocal()
+  maven { url 'https://maven.aliyun.com/repository/public/' } // 使用阿里云 Maven 仓库
   mavenCentral()
 }
 
