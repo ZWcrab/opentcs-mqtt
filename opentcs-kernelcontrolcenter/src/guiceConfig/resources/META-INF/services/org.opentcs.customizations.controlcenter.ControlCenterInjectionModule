@@ -3,3 +3,4 @@
 
 org.opentcs.kernelcontrolcenter.DefaultKernelControlCenterExtensionsModule
 org.opentcs.kernelcontrolcenter.LoopbackCommAdapterPanelsModule
+org.opentcs.ros2bridge.ROS2BridgeCommAdapterPanelsModule

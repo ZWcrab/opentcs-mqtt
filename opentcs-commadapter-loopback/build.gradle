@@ -10,6 +10,7 @@ dependencies {
   api project(':opentcs-api-injection')
   api project(':opentcs-common')
   implementation libs.mqtt.paho.client
+  implementation 'org.java-websocket:Java-WebSocket:1.5.4'
 }
 
 task release {
