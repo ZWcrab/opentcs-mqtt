@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 /**
  * Provides configuration for the ROS2 bridge adapter.
@@ -8,7 +8,7 @@ public interface ROS2BridgeConfiguration {
   /**
    * The prefix for configuration keys of this class.
    */
-  String PREFIX = "opentcs.ros2bridge";
+  String PREFIX = "opentcs.commadapter.rosbridge";
 
   /**
    * Returns the URL of the rosbridge server.

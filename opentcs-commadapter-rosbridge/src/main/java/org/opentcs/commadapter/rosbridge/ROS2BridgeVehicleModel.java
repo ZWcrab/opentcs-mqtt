@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import org.opentcs.data.model.Vehicle;
 import org.opentcs.drivers.vehicle.VehicleProcessModel;

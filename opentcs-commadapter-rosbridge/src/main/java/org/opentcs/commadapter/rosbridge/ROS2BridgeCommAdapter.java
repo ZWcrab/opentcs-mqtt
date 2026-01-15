@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import static java.util.Objects.requireNonNull;
 
@@ -12,7 +12,6 @@ import org.opentcs.drivers.vehicle.BasicVehicleCommAdapter;
 import org.opentcs.drivers.vehicle.MovementCommand;
 import org.opentcs.drivers.vehicle.SimVehicleCommAdapter;
 import org.opentcs.drivers.vehicle.VehicleCommAdapterMessage;
-import org.opentcs.drivers.vehicle.VehicleProcessModel;
 import org.opentcs.util.MapValueExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

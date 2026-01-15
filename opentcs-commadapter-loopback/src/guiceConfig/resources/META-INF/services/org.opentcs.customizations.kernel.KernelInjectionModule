@@ -2,4 +2,3 @@
 # SPDX-License-Identifier: MIT
 
 org.opentcs.virtualvehicle.LoopbackCommAdapterModule
-org.opentcs.ros2bridge.ROS2BridgeCommAdapterModule

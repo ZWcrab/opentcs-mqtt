@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import com.google.inject.assistedinject.FactoryModuleBuilder;
 import org.opentcs.customizations.kernel.KernelInjectionModule;

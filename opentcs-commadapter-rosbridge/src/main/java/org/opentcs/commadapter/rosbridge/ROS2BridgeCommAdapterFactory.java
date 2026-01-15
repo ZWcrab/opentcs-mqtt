@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import static java.util.Objects.requireNonNull;
 

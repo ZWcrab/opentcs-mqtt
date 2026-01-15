@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 /**
  * Provides constants for the ROS2 bridge adapter.
@@ -8,7 +8,7 @@ public interface ROS2BridgeConstants {
   /**
    * The default URL for the rosbridge server.
    */
-  String DEFAULT_ROSBRIDGE_URL = "ws://192.168.31.128:9090";
+  String DEFAULT_ROSBRIDGE_URL = "ws://10.188.232.82:9090";
 
   /**
    * The default capacity of the command queue.

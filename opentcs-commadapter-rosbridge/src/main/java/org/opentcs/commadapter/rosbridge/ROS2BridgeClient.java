@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
@@ -150,22 +150,22 @@ public class ROS2BridgeClient {
           "{\"op\":\"publish\",\"topic\":\"/cmd_vel\",\"msg\":{\"linear\":{\"x\":0.5,\"y\":0.0,\"z\":0.0},\"angular\":{\"x\":0.0,\"y\":0.0,\"z\":0.0}}}"
       );
       sendMessage(cmdVel);
-//      Thread.sleep(2000);
-//      String cmdVel2 = String.format(
-//          "{\"op\":\"publish\",\"topic\":\"/cmd_vel\",\"msg\":{\"linear\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"angular\":{\"x\":0.0,\"y\":0.0,\"z\":0.0}}}"
-//      );
-//      sendMessage(cmdVel2);
 
-      LOG.debug("Movement command executed");
-      // Simulate command execution delay
+      // Simulate command execution delay and then stop
       CompletableFuture.runAsync(() -> {
         try {
           Thread.sleep(1000);
+          
+          // Send stop command
+          String stopCmd = String.format(
+              "{\"op\":\"publish\",\"topic\":\"/cmd_vel\",\"msg\":{\"linear\":{\"x\":0.0,\"y\":0.0,\"z\":0.0},\"angular\":{\"x\":0.0,\"y\":0.0,\"z\":0.0}}}"
+          );
+          sendMessage(stopCmd);
+          LOG.debug("Movement command executed and stopped");
         }
         catch (InterruptedException e) {
           Thread.currentThread().interrupt();
         }
-        LOG.debug("Movement command executed");
       });
     }
     catch (Exception e) {
@@ -258,9 +258,9 @@ public class ROS2BridgeClient {
       }
 
       // Convert mm to meters for ROS2 coordinates
-      double x = position.getX() / 1000.0;
-      double y = position.getY() / 1000.0;
-      double z = position.getZ() / 1000.0;
+      double x = position.getX() / 5000.0;
+      double y = position.getY() / 5000.0;
+      double z = position.getZ() / 5000.0;
       double orientation = point.getPose().getOrientationAngle();
 
       LOG.debug(
@@ -312,9 +312,9 @@ public class ROS2BridgeClient {
 
     try {
       // Convert mm to meters for ROS2 coordinates
-      double rosX = x / 1000.0;
-      double rosY = y / 1000.0;
-      double rosZ = z / 1000.0;
+      double rosX = x / 5000.0;
+      double rosY = y / 5000.0;
+      double rosZ = z / 5000.0;
 
       LOG.debug(
           "Publishing vehicle position: {} (x: {}mm -> {}m, y: {}mm -> {}m, z: {}mm -> {}m)",

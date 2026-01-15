@@ -1,6 +1,7 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import org.opentcs.customizations.controlcenter.ControlCenterInjectionModule;
+import org.opentcs.commadapter.rosbridge.ROS2BridgeCommAdapterPanelFactory;
 
 /**
  * Registers the ROS2 bridge adapter's panels.

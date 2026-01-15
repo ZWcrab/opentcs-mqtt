@@ -1,4 +1,4 @@
-package org.opentcs.ros2bridge;
+package org.opentcs.commadapter.rosbridge;
 
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
