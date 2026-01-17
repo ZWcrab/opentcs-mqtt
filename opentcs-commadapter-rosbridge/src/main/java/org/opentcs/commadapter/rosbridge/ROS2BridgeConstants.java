@@ -8,7 +8,7 @@ public interface ROS2BridgeConstants {
   /**
    * The default URL for the rosbridge server.
    */
-  String DEFAULT_ROSBRIDGE_URL = "ws://10.188.232.82:9090";
+  String DEFAULT_ROSBRIDGE_URL = "ws://192.168.31.177:9090";
 
   /**
    * The default capacity of the command queue.
@@ -29,6 +29,16 @@ public interface ROS2BridgeConstants {
    * The default prefix for ROS2 topics.
    */
   String DEFAULT_TOPIC_PREFIX = "opentcs";
+
+  /**
+   * The default topic for navigation goals.
+   */
+  String DEFAULT_GOAL_TOPIC = "/goal_pose";
+
+  /**
+   * The default topic for pose updates.
+   */
+  String DEFAULT_POSE_TOPIC = "/amcl_pose";
 
   /**
    * The property key for the initial position of a vehicle.

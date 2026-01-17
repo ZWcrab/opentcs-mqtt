@@ -56,6 +56,24 @@ public interface ROS2BridgeConfiguration {
   }
 
   /**
+   * Returns the topic for navigation goals.
+   *
+   * @return The topic for navigation goals.
+   */
+  default String goalTopic() {
+    return ROS2BridgeConstants.DEFAULT_GOAL_TOPIC;
+  }
+
+  /**
+   * Returns the topic for pose updates.
+   *
+   * @return The topic for pose updates.
+   */
+  default String poseTopic() {
+    return ROS2BridgeConstants.DEFAULT_POSE_TOPIC;
+  }
+
+  /**
    * Returns whether the adapter is enabled.
    *
    * @return Whether the adapter is enabled.

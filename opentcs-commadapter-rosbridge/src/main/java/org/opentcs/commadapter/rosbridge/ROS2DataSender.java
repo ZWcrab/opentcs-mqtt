@@ -27,12 +27,12 @@ public class ROS2DataSender {
   /**
    * Indicates whether the client is connected.
    */
-  private static final AtomicBoolean isConnected = new AtomicBoolean(false);
+  private static final AtomicBoolean CONNECTED = new AtomicBoolean(false);
 
   /**
    * The default rosbridge URL.
    */
-  private static final String DEFAULT_ROSBRIDGE_URL = "ws://192.168.31.128:9090";
+  private static final String DEFAULT_ROSBRIDGE_URL = "ws://192.168.31.177:9090";
 
   /**
    * Private constructor to prevent instantiation.
@@ -48,52 +48,30 @@ public class ROS2DataSender {
    * @return {@code true} if connected successfully, {@code false} otherwise.
    */
   public static boolean connect(String url) {
+    LOG.info("Connecting to rosbridge at {}", url);
+
+    // Close existing connection if any
+    if (webSocketClient != null && CONNECTED.get()) {
+      disconnect();
+    }
+
+    final CountDownLatch latch = new CountDownLatch(1);
+
     try {
-      LOG.info("Connecting to rosbridge at {}", url);
-
-      // Close existing connection if any
-      if (webSocketClient != null && isConnected.get()) {
-        disconnect();
-      }
-
-      final CountDownLatch latch = new CountDownLatch(1);
-
-      webSocketClient = new WebSocketClient(URI.create(url)) {
-        @Override
-        public void onOpen(ServerHandshake handshakedata) {
-          LOG.info("Connected to rosbridge");
-          isConnected.set(true);
-          latch.countDown();
-        }
-
-        @Override
-        public void onMessage(String message) {
-          LOG.debug("Received message from rosbridge: {}", message);
-        }
-
-        @Override
-        public void onClose(int code, String reason, boolean remote) {
-          LOG.info("Disconnected from rosbridge: {}", reason);
-          isConnected.set(false);
-        }
-
-        @Override
-        public void onError(Exception ex) {
-          LOG.error("Error in rosbridge connection: {}", ex.getMessage(), ex);
-          isConnected.set(false);
-          latch.countDown();
-        }
-      };
-
+      webSocketClient = new RosbridgeWebSocketClient(URI.create(url), latch);
       webSocketClient.connect();
 
       // Wait for connection to be established (max 5 seconds)
-      return latch.await(5, TimeUnit.SECONDS) && isConnected.get();
-
+      return latch.await(5, TimeUnit.SECONDS) && CONNECTED.get();
     }
-    catch (Exception e) {
+    catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      CONNECTED.set(false);
+      return false;
+    }
+    catch (IllegalArgumentException e) {
       LOG.error("Failed to connect to rosbridge: {}", e.getMessage(), e);
-      isConnected.set(false);
+      CONNECTED.set(false);
       return false;
     }
   }
@@ -115,7 +93,7 @@ public class ROS2DataSender {
       webSocketClient.close();
       webSocketClient = null;
     }
-    isConnected.set(false);
+    CONNECTED.set(false);
     LOG.info("Disconnected from rosbridge");
   }
 
@@ -125,7 +103,7 @@ public class ROS2DataSender {
    * @return {@code true} if connected, {@code false} otherwise.
    */
   public static boolean isConnected() {
-    return isConnected.get();
+    return CONNECTED.get();
   }
 
   /**
@@ -136,17 +114,12 @@ public class ROS2DataSender {
    * @return {@code true} if message was sent successfully, {@code false} otherwise.
    */
   public static boolean sendStringMessage(String topic, String message) {
-    try {
-      String rosMessage = String.format(
-          "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"data\":\"%s\"}}",
-          topic, message
-      );
-      return sendMessage(rosMessage);
-    }
-    catch (Exception e) {
-      LOG.error("Failed to send string message: {}", e.getMessage(), e);
-      return false;
-    }
+    String rosMessage = String.format(
+        "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"data\":\"%s\"}}",
+        topic,
+        message
+    );
+    return sendMessage(rosMessage);
   }
 
   /**
@@ -158,17 +131,14 @@ public class ROS2DataSender {
    * @return {@code true} if message was sent successfully, {@code false} otherwise.
    */
   public static boolean sendVehicleCommand(String topic, double linearVel, double angularVel) {
-    try {
-      String rosMessage = String.format(
-          "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"linear\":{\"x\":%.2f,\"y\":0.0,\"z\":0.0},\"angular\":{\"x\":0.0,\"y\":0.0,\"z\":%.2f}}}",
-          topic, linearVel, angularVel
-      );
-      return sendMessage(rosMessage);
-    }
-    catch (Exception e) {
-      LOG.error("Failed to send vehicle command: {}", e.getMessage(), e);
-      return false;
-    }
+    String rosMessage = String.format(
+        "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"linear\":{\"x\":%.2f,\"y\":0.0,\"z\":0.0},"
+            + "\"angular\":{\"x\":0.0,\"y\":0.0,\"z\":%.2f}}}",
+        topic,
+        linearVel,
+        angularVel
+    );
+    return sendMessage(rosMessage);
   }
 
   /**
@@ -181,17 +151,15 @@ public class ROS2DataSender {
    * @return {@code true} if message was sent successfully, {@code false} otherwise.
    */
   public static boolean sendPositionData(String topic, double x, double y, double z) {
-    try {
-      String rosMessage = String.format(
-          "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"position\":{\"x\":%.2f,\"y\":%.2f,\"z\":%.2f}}}",
-          topic, x, y, z
-      );
-      return sendMessage(rosMessage);
-    }
-    catch (Exception e) {
-      LOG.error("Failed to send position data: {}", e.getMessage(), e);
-      return false;
-    }
+    String rosMessage = String.format(
+        "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":{\"position\":{"
+            + "\"x\":%.2f,\"y\":%.2f,\"z\":%.2f}}}",
+        topic,
+        x,
+        y,
+        z
+    );
+    return sendMessage(rosMessage);
   }
 
   /**
@@ -202,17 +170,12 @@ public class ROS2DataSender {
    * @return {@code true} if message was sent successfully, {@code false} otherwise.
    */
   public static boolean sendMapData(String topic, String mapJson) {
-    try {
-      String rosMessage = String.format(
-          "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":%s}",
-          topic, mapJson
-      );
-      return sendMessage(rosMessage);
-    }
-    catch (Exception e) {
-      LOG.error("Failed to send map data: {}", e.getMessage(), e);
-      return false;
-    }
+    String rosMessage = String.format(
+        "{\"op\":\"publish\",\"topic\":\"%s\",\"msg\":%s}",
+        topic,
+        mapJson
+    );
+    return sendMessage(rosMessage);
   }
 
   /**
@@ -227,19 +190,15 @@ public class ROS2DataSender {
       return false;
     }
 
-    try {
-      webSocketClient.send(message);
-      LOG.debug("Sent message to rosbridge: {}", message);
-      return true;
-    }
-    catch (Exception e) {
-      LOG.error("Failed to send message: {}", e.getMessage(), e);
-      return false;
-    }
+    webSocketClient.send(message);
+    LOG.info("Sent message to rosbridge: {}", message);
+    return true;
   }
 
   /**
    * Example usage of the ROS2DataSender class.
+   *
+   * @param args Command line arguments.
    */
   public static void main(String[] args) {
     // Example: Send a vehicle command
@@ -262,6 +221,42 @@ public class ROS2DataSender {
         Thread.currentThread().interrupt();
       }
       ROS2DataSender.disconnect();
+    }
+  }
+
+  private static final class RosbridgeWebSocketClient
+      extends
+        WebSocketClient {
+    private final CountDownLatch latch;
+
+    private RosbridgeWebSocketClient(URI serverUri, CountDownLatch latch) {
+      super(serverUri);
+      this.latch = latch;
+    }
+
+    @Override
+    public void onOpen(ServerHandshake handshakedata) {
+      LOG.info("Connected to rosbridge");
+      CONNECTED.set(true);
+      latch.countDown();
+    }
+
+    @Override
+    public void onMessage(String message) {
+      LOG.info("Received message from rosbridge: {}", message);
+    }
+
+    @Override
+    public void onClose(int code, String reason, boolean remote) {
+      LOG.info("Disconnected from rosbridge: {}", reason);
+      CONNECTED.set(false);
+    }
+
+    @Override
+    public void onError(Exception ex) {
+      LOG.error("Error in rosbridge connection: {}", ex.getMessage(), ex);
+      CONNECTED.set(false);
+      latch.countDown();
     }
   }
 }

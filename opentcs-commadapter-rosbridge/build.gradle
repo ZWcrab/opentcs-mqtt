@@ -10,6 +10,7 @@ dependencies {
   api project(':opentcs-api-injection')
   api project(':opentcs-common')
   implementation 'org.java-websocket:Java-WebSocket:1.5.4'
+  implementation libs.jackson.databind
 }
 
 task release {
