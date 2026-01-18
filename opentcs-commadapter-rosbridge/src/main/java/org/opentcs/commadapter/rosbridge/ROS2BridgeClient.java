@@ -393,7 +393,9 @@ public class ROS2BridgeClient {
         orientationDeg
     );
 
-    long now = System.currentTimeMillis();
+    // Use current time minus 500ms to account for clock skew/latency
+    // This ensures the timestamp is slightly in the past relative to ROS2's clock
+    long now = System.currentTimeMillis() - 500;
     long secs = now / 1000;
     long nsecs = (now % 1000) * 1000000;
 

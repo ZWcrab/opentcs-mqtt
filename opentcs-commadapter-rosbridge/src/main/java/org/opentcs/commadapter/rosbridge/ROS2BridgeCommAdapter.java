@@ -6,6 +6,7 @@ import com.google.inject.assistedinject.Assisted;
 import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import java.util.concurrent.ScheduledExecutorService;
+import org.opentcs.components.kernel.services.TCSObjectService;
 import org.opentcs.data.model.Point;
 import org.opentcs.data.model.Pose;
 import org.opentcs.data.model.Triple;
@@ -59,10 +60,16 @@ public class ROS2BridgeCommAdapter
   private final PoseManager poseManager;
 
   /**
+   * The object service to fetch model objects.
+   */
+  private final TCSObjectService objectService;
+
+  /**
    * Creates a new instance.
    *
    * @param configuration This class's configuration.
    * @param mapValueExtractor Extracts values from maps.
+   * @param objectService The object service.
    * @param vehicle The vehicle this adapter is associated with.
    * @param kernelExecutor The kernel's executor.
    */
@@ -70,6 +77,7 @@ public class ROS2BridgeCommAdapter
   public ROS2BridgeCommAdapter(
       ROS2BridgeConfiguration configuration,
       MapValueExtractor mapValueExtractor,
+      TCSObjectService objectService,
       @Assisted
       Vehicle vehicle,
       @org.opentcs.customizations.kernel.KernelExecutor
@@ -84,6 +92,7 @@ public class ROS2BridgeCommAdapter
     this.vehicle = requireNonNull(vehicle, "vehicle");
     this.configuration = requireNonNull(configuration, "configuration");
     this.mapValueExtractor = requireNonNull(mapValueExtractor, "mapValueExtractor");
+    this.objectService = requireNonNull(objectService, "objectService");
     this.poseManager = new PoseManager(kernelExecutor);
   }
 
@@ -219,10 +228,17 @@ public class ROS2BridgeCommAdapter
       // Explicitly setting it again here might cause race conditions or "unexpected position" errors
       // if the state transition isn't fully complete.
       // Only set position if we are in IDLE state (which we might have just set above)
-      if (getProcessModel().getState() == Vehicle.State.IDLE) {
-         String destName = destPoint.getName();
-         getProcessModel().setPosition(destName);
-      }
+      // if (getProcessModel().getState() == Vehicle.State.IDLE) {
+      //    String destName = destPoint.getName();
+      //    getProcessModel().setPosition(destName);
+      // }
+      // Update 2024-05: The above check is not enough. If commandExecuted() is async or takes time,
+      // the state might still be EXECUTING here.
+      // However, since we just called commandExecuted(), we SHOULD NOT set the position manually at all
+      // for the finished step, because the Kernel does that automatically when processing the command completion.
+      // Setting it manually here (even if IDLE) risks race conditions where the Kernel sees an "unexpected position" update.
+      // So we comment out the setPosition entirely for the command completion case.
+      LOG.debug("Command finished, letting Kernel handle position update via commandExecuted()");
     }
     else {
       LOG.warn(
@@ -321,25 +337,29 @@ public class ROS2BridgeCommAdapter
 
     // Publish initial position to ROS2 with coordinates
     if (ros2BridgeClient != null && ros2BridgeClient.isConnected()) {
-      // Get the point's coordinates from the vehicle's pose if available
+      // Get the point's coordinates from the model
       long x = 0;
       long y = 0;
-
-      // We need to look up the point in the model to get its coordinates
-      // Since we don't have direct access to the PlantModel here, we rely on what's available
-      // Ideally, we should look up the Point object by name (newPos)
-
-      // For now, let's try to get it from the vehicle's current pose if it matches
       double orientation = 0.0;
 
-      if (vehicle.getPose() != null && vehicle.getPose().getPosition() != null) {
-        // This is a simplification. In a real scenario, we should look up the point coordinates
-        // corresponding to 'newPos'. If 'newPos' matches current position, use it.
-        // Otherwise, we might need to inject the PlantModelService or similar.
-        Triple position = vehicle.getPose().getPosition();
+      Point point = objectService.fetch(Point.class, newPos).orElse(null);
+      if (point != null && point.getPose().getPosition() != null) {
+        Triple position = point.getPose().getPosition();
         x = position.getX();
         y = position.getY();
-        orientation = vehicle.getPose().getOrientationAngle();
+        orientation = point.getPose().getOrientationAngle();
+      }
+      else {
+        LOG.warn("Could not find point '{}' or it has no position defined. Using default (0,0).", newPos);
+        // Fallback: try to get from current vehicle pose if it matches
+        if (vehicle.getPose() != null 
+            && vehicle.getPose().getPosition() != null 
+            && newPos.equals(getProcessModel().getPosition())) {
+           Triple position = vehicle.getPose().getPosition();
+           x = position.getX();
+           y = position.getY();
+           orientation = vehicle.getPose().getOrientationAngle();
+        }
       }
 
       // Send initial pose to ROS2 (amcl/initialpose)
