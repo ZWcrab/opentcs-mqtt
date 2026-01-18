@@ -318,12 +318,15 @@ public class ROS2BridgeCommAdapter
       String destPos = cmd.getStep().getDestinationPoint().getName();
 
       // If the step name matches the destination point name, it means we are there.
-      if (cmd.getStep().getDestinationPoint().getName().equals(cmd.getFinalDestination().getName())
-          && currentPos != null && currentPos.equals(destPos)) {
-        finishMovementCommand(cmd);
-        return;
-      }
-
+      // NOTE: This immediate finish logic can cause issues if the vehicle is not actually at the physical location yet.
+      // It is safer to rely on position updates from ROS2 to confirm arrival.
+      // if (cmd.getStep().getDestinationPoint().getName().equals(cmd.getFinalDestination().getName())
+      //    && currentPos != null && currentPos.equals(destPos)) {
+      //  finishMovementCommand(cmd);
+      //  return;
+      // }
+      
+      // Let the arrival check logic handle the completion based on actual distance/position updates
       if (getProcessModel().getPose().getPosition() != null) {
         checkForArrival(getProcessModel().getPose().getPosition(),cmd);
       }
