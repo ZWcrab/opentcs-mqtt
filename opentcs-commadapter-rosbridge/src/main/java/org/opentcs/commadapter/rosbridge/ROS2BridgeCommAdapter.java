@@ -100,7 +100,11 @@ public class ROS2BridgeCommAdapter
     ros2BridgeClient.setPositionListener(pos -> {
       getExecutor().execute(() -> {
         LOG.info("Received position update: {}", pos);
-        getProcessModel().setPosition(pos);
+        // Only update position directly if we are not executing a command,
+        // otherwise let the arrival check handle it to avoid "unexpected position" errors from kernel
+        if (getProcessModel().getState() == Vehicle.State.IDLE) {
+          getProcessModel().setPosition(pos);
+        }
         checkForArrivalByPositionName(pos);
       });
     });
@@ -211,8 +215,14 @@ public class ROS2BridgeCommAdapter
       if (destPoint == null) {
         destPoint = command.getFinalDestination();
       }
-      String destName = destPoint.getName();
-      getProcessModel().setPosition(destName);
+      // The commandExecuted call above should already update the vehicle's position in the kernel.
+      // Explicitly setting it again here might cause race conditions or "unexpected position" errors
+      // if the state transition isn't fully complete.
+      // Only set position if we are in IDLE state (which we might have just set above)
+      if (getProcessModel().getState() == Vehicle.State.IDLE) {
+         String destName = destPoint.getName();
+         getProcessModel().setPosition(destName);
+      }
     }
     else {
       LOG.warn(
